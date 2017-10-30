@@ -7,7 +7,7 @@ import socket
 import aiohttp
 
 
-class Log(object):
+class Response(object):
     def __init__(self, resp, host):
         self.host = host
         self.url = resp.url
@@ -24,7 +24,7 @@ class Log(object):
 async def fetch_url(session, url, host):
     headers = {"Host": host}
     async with session.get(url, headers=headers, allow_redirects=False) as resp:
-        return Log(resp, host)
+        return Response(resp, host)
 
 
 async def main(url, hosts, cookies):
@@ -34,9 +34,9 @@ async def main(url, hosts, cookies):
     conn = aiohttp.TCPConnector(verify_ssl=False, limit_per_host=4, family=socket.AF_INET)
     async with aiohttp.ClientSession(connector=conn, cookie_jar=jar) as session:
         futures = [ fetch_url(session, url, host) for host in hosts ]
-        logs = await asyncio.gather(*futures)
-        logs.sort(key=lambda x: x.status)
-        print('\n'.join(map(str, logs)))
+        responses = await asyncio.gather(*futures)
+        responses.sort(key=lambda x: x.status)
+        print('\n'.join(map(str, responses)))
 
 
 # TODO:
