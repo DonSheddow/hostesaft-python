@@ -27,9 +27,12 @@ async def fetch_url(session, url, host):
         return Log(resp, host)
 
 
-async def main(url, hosts):
+async def main(url, hosts, cookies):
+    jar = aiohttp.CookieJar(unsafe=True)
+    jar.update_cookies(cookies)
+
     conn = aiohttp.TCPConnector(verify_ssl=False, limit_per_host=4, family=socket.AF_INET)
-    async with aiohttp.ClientSession(connector=conn) as session:
+    async with aiohttp.ClientSession(connector=conn, cookie_jar=jar) as session:
         futures = [ fetch_url(session, url, host) for host in hosts ]
         logs = await asyncio.gather(*futures)
         logs.sort(key=lambda x: x.status)
@@ -44,12 +47,20 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("target")
     parser.add_argument("-f", "--hosts", type=argparse.FileType('r'), required=True)
+    parser.add_argument("-c", "--cookies")
 
     args = parser.parse_args()
+
     hosts = [ host.strip() for host in args.hosts.readlines() ]
+
     url = args.target
     if not url.startswith("http"):
         url = "https://"+url
 
+    if args.cookies:
+        cookies = dict( c.strip().split('=', 1) for c in args.cookies.split(';') )
+    else:
+        cookies = {}
+
     loop = asyncio.get_event_loop()
-    loop.run_until_complete(main(url, hosts))
+    loop.run_until_complete(main(url, hosts, cookies))
