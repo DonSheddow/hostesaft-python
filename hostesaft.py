@@ -12,13 +12,16 @@ class Response(object):
         self.host = host
         self.url = resp.url
         self.status = resp.status
+        self.full_status = str(self.status)
+        if resp.reason:
+            self.full_status += " " + resp.reason
         self.location = resp.headers['Location'] if 301 <= resp.status <= 303 else None
     
     def __str__(self):
         if self.location:
-            return "{} :: {} --> {}".format(self.host, self.status, self.location)
+            return "{} :: {}\n\t--> {}".format(self.host, self.full_status, self.location)
         else:
-            return "{} :: {}".format(self.host, self.status)
+            return "{} :: {}".format(self.host, self.full_status)
 
 
 async def fetch_url(session, url, host):
